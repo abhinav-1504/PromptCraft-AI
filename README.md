@@ -263,12 +263,5 @@ Open a pull request to merge.
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-## Contact
-
-**Author**: [Your Name]  
-**Email**: your.email@example.com  
-**GitHub**: your-username  
-**LinkedIn**: your-linkedin-profile
-
 > This project was developed as part of a portfolio to demonstrate full-stack development skills with AI integration.  
 > For OpenAI API pricing or details, visit: https://x.ai/api
