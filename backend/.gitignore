@@ -1,0 +1,22 @@
+# Ignore IntelliJ project files
+.idea/
+*.iml
+
+# Ignore Maven build folder
+/target/
+
+# Ignore OS junk files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+
+# Ignore environment and secret config files
+.env
+src/main/resources/application.properties
+src/main/resources/application.yml
+
+# Ignore test output or temp files
+*.class
+*.swp
