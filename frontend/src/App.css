@@ -1,0 +1,28 @@
+.container {
+  max-width: 1200px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tab.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.content {
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 5px;
+}

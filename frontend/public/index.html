@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Photo Generator</title>
+</head>
+<body>
+    <div id="root"></div>```
+stock-photo-frontend/index.html
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Photo Generator</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- React Router -->
+    <script src="https://cdn.jsdelivr.net/npm/react-router-dom@6.26.2/dist/umd/react-router-dom.production.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.7/babel.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { BrowserRouter, Routes, Route, Link } = window.ReactRouterDOM;
+        const { useState, useEffect } = React;
+
+        // Image Component (Updated)
+        const ImageComponent = () => {
+            const [prompt, setPrompt] = useState('');
+            const [size, setSize] = useState('1024x1024');
+            const [quality, setQuality] = useState('standard');
+            const [imageUrl, setImageUrl] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [retryCount, setRetryCount] = useState(0);
+            const [cooldown, setCooldown] = useState(0);
+
+            useEffect(() => {
+                if (cooldown > 0) {
+                    const timer = setInterval(() => {
+                        setCooldown(prev => {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    return () => clearInterval(timer);
+                }
+            }, [cooldown]);
+
+            const generateImage = async () => {
+                if (cooldown > 0 || retryCount >= 3) return;
+                setError('');
+                setLoading(true);
+                try {
+                    const response = await axios.post('http://localhost:8080/api/image', {
+                        prompt,
+                        size,
+                        quality
+                    });
+                    setImageUrl(response.data);
+                    setRetryCount(0);
+                    setCooldown(0);
+                } catch (err) {
+                    if (err.response?.status === 429) {
+                        setError('Rate limit exceeded. Please wait 60 seconds.');
+                        setRetryCount(prev => prev + 1);
+                        setCooldown(60);
+                    } else {
+                        setError('Failed to generate image: ' + (err.response?.data || err.message));
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="p-6 max-w-2xl mx-auto bg-white rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold mb-4">Generate Image</h2>
+                    <input
+                        type="text"
+                        className="w-full p-2 mb-4 border rounded"
+                        placeholder="Enter image prompt (e.g., A sunny beach)"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                    />
+                    <select
+                        className="w-full p-2 mb-4 border rounded"
+                        value={size}
+                        onChange={(e) => setSize(e.target.value)}
+                    >
+                        <option value="1024x1024">1024x1024</option>
+                        <option value="1792x1024">1792x1024</option>
+                        <option value="1024x1792">1024x1792</option>
+                    </select>
+                    <select
+                        className="w-full p-2 mb-4 border rounded"
+                        value={quality}
+                        onChange={(e) => setQuality(e.target.value)}
+                    >
+                        <option value="standard">Standard</option>
+                        <option value="hd">HD</option>
+                    </select>
+                    <button
+                        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                        onClick={generateImage}
+                        disabled={loading || !prompt || cooldown > 0 || retryCount >= 3}
+                    >
+                        {loading ? (
+                            <span className="flex items-center justify-center">
+                                <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Generating...
+                            </span>
+                        ) : cooldown > 0 ? `Wait ${cooldown}s` : retryCount >= 3 ? 'Max Retries Reached' : retryCount > 0 ? `Retry (${retryCount}/3)` : 'Generate Image'}
+                    </button>
+                    {error && (
+                        <p className="text-red-500 mt-4">
+                            {error}
+                            {error.includes('Rate limit') && (
+                                <span> Attempt {retryCount} of 3.</span>
+                            )}
+                        </p>
+                    )}
+                    {imageUrl && (
+                        <div className="mt-4">
+                            <img src={imageUrl} alt="Generated" className="w-full rounded" />
+                            <a href={imageUrl} target="_blank" className="text-blue-500 underline">View Full Image</a>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // TTS Component (Unchanged)
+        const TTSComponent = () => {
+            const [text, setText] = useState('');
+            const [voice, setVoice] = useState('alloy');
+            const [audioSrc, setAudioSrc] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const generateAudio = async () => {
+                setError('');
+                setLoading(true);
+                try {
+                    const response = await axios.post('http://localhost:8080/api/tts', {
+                        text,
+                        voice
+                    }, { responseType: 'blob' });
+                    const blob = new Blob([response.data], { type: 'audio/mp3' });
+                    const url = URL.createObjectURL(blob);
+                    setAudioSrc(url);
+                } catch (err) {
+                    setError(err.response?.status === 429 
+                        ? 'Rate limit exceeded. Please wait and try again.'
+                        : 'Failed to generate audio. Check backend logs.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="p-6 max-w-2xl mx-auto bg-white rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold mb-4">Text to Speech</h2>
+                    <textarea
+                        className="w-full p-2 mb-4 border rounded"
+                        placeholder="Enter text to convert to speech"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        rows="4"
+                    />
+                    <select
+                        className="w-full p-2 mb-4 border rounded"
+                        value={voice}
+                        onChange={(e) => setVoice(e.target.value)}
+                    >
+                        <option value="alloy">Alloy</option>
+                        <option value="echo">Echo</option>
+                        <option value="fable">Fable</option>
+                        <option value="onyx">Onyx</option>
+                        <option value="nova">Nova</option>
+                        <option value="shimmer">Shimmer</option>
+                    </select>
+                    <button
+                        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                        onClick={generateAudio}
+                        disabled={loading || !text}
+                    >
+                        {loading ? 'Generating...' : 'Generate Audio'}
+                    </button>
+                    {error && <p className="text-red-500 mt-4">{error}</p>}
+                    {audioSrc && (
+                        <div className="mt-4">
+                            <audio controls src={audioSrc} className="w-full" />
+                            <a href={audioSrc} download="speech.mp3" className="text-blue-500 underline">Download Audio</a>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Recipe Component (Optional)
+        const RecipeComponent = () => {
+            const [ingredients, setIngredients] = useState('');
+            const [recipe, setRecipe] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const generateRecipe = async () => {
+                setError('');
+                setLoading(true);
+                try {
+                    const response = await axios.post('http://localhost:8080/api/recipe', {
+                        ingredients
+                    });
+                    setRecipe(response.data.recipe);
+                } catch (err) {
+                    setError(err.response?.status === 429 
+                        ? 'Rate limit exceeded. Please wait and try again.'
+                        : 'Failed to generate recipe. Check backend logs.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="p-6 max-w-2xl mx-auto bg-white rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold mb-4">Generate Recipe</h2>
+                    <input
+                        type="text"
+                        className="w-full p-2 mb-4 border rounded"
+                        placeholder="Enter ingredients (e.g., chicken, rice, broccoli)"
+                        value={ingredients}
+                        onChange={(e) => setIngredients(e.target.value)}
+                    />
+                    <button
+                        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                        onClick={generateRecipe}
+                        disabled={loading || !ingredients}
+                    >
+                        {loading ? 'Generating...' : 'Generate Recipe'}
+                    </button>
+                    {error && <p className="text-red-500 mt-4">{error}</p>}
+                    {recipe && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded">
+                            <h3 className="text-lg font-semibold">Recipe</h3>
+                            <p className="whitespace-pre-wrap">{recipe}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // App Component
+        const App = () => {
+            return (
+                <BrowserRouter>
+                    <nav className="bg-blue-600 text-white p-4">
+                        <div className="max-w-4xl mx-auto flex space-x-4">
+                            <Link to="/" className="hover:underline">Image</Link>
+                            <Link to="/tts" className="hover:underline">Text to Speech</Link>
+                            <Link to="/recipe" className="hover:underline">Recipe</Link>
+                        </div>
+                    </nav>
+                    <div className="py-8">
+                        <Routes>
+                            <Route path="/" element={<ImageComponent />} />
+                            <Route path="/tts" element={<TTSComponent />} />
+                            <Route path="/recipe" element={<RecipeComponent />} />
+                        </Routes>
+                    </div>
+                </BrowserRouter>
+            );
+        };
+
+        // Render App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+```
+</body>
+</html>
