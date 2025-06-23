@@ -17,7 +17,6 @@ A full-stack application built with Spring Boot, Spring AI, React, and MySQL, in
 - [Future Enhancements](#future-enhancements)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contact](#contact)
 
 ## Features
 
